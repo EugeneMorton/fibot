@@ -43,9 +43,8 @@ def schedule(bot, update):
 
 def helper(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Hi! I`m FIbot\nI can show you your schedule - use:\n"
-                                                          "/schedule \nAlso i have "
-                                                          "some undocumented features :D\nMy developer is working on "
-                                                          "adding your homework to my database.")
+                                                          "/schedule \nAlso i have some undocumented features :D\nMy "
+                                                          "developer is working on adding your homework to my database")
 
 
 def button(bot, update):

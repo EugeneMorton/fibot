@@ -57,6 +57,7 @@ def admins_gen(chatid):
     conn = sqlite3.connect('fibot.db')
     c = conn.cursor()
     mes = ''
+    c.execute("CREATE TABLE IF NOT EXISTS admins (chatid INTEGER, userid INTEGER, role TEXT, name TEXT)")
     for row in c.execute('SELECT * FROM admins WHERE chatid = ?', [chatid]):
         mes += row[2] + ' ' + row[3] + '\n'
     conn.close()
