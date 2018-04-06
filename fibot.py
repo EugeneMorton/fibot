@@ -3,7 +3,7 @@ import datetime
 import telegram.ext
 import logging
 from re import match
-from config import token
+from config import token  # single-string file with my bot`s token
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -31,16 +31,19 @@ def adm(bot, update, args):
             else:
                 bot.send_message(chat_id=update.message.chat_id, text="Invalid role or user alredy admin or moderator")
 
+
 def keyboard_job(bot, job):
     globals()['keyboard'] = button_gen()
     logger.debug('Updated keyboard')
 
 
+# TODO: add homework to some day
 def schedule(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text=schedule_gen(),
                      reply_markup=telegram.InlineKeyboardMarkup(keyboard))
 
 
+# TODO: Normal help message for admin/moderator
 def helper(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Hi! I`m FIbot\nI can show you your schedule - use:\n"
                                                           "/schedule \nAlso i have some undocumented features :D\nMy "
@@ -59,8 +62,8 @@ def button(bot, update):
 def mute(bot, update, args, job_queue):
     reply = update.message.reply_to_message.from_user
     muter_role = isAdmin(update.effective_message.from_user.id, update.message.chat.id)
-    if muter_role in ['Moderator', 'Admin'] and not isAdmin(reply.id, update.message.chat.id) == 'Admin':
-        if not update.message.reply_to_message:
+    if muter_role and isAdmin(reply.id, update.message.chat.id) != 'Admin':
+        if not update.message.reply_to_message:  # TODO: fix message (Returns NonType(?) not None)
             bot.send_message(chat_id=update.message.chat_id, text="Reply person you want to mute")
         elif args and (match(r'\d{1,3}', args[0]) or (args[0] == 'forever' and muter_role == 'Admin')):
             bot.restrictChatMember(chat_id=update.message.chat.id,
@@ -106,6 +109,7 @@ def main():
     dp.add_handler(telegram.ext.CallbackQueryHandler(button))
     jq.run_repeating(keyboard_job, datetime.timedelta(days=1),
                      datetime.datetime.now().replace(hour=00, minute=0) + datetime.timedelta(days=1))
+    # TODO: set uppdate keyboard every week, not day
     ud.start_polling()
     ud.idle()
 
