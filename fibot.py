@@ -3,6 +3,7 @@ import datetime
 import telegram.ext
 import logging
 from re import match
+from config import token
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -42,9 +43,9 @@ def schedule(bot, update):
 
 def helper(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Hi! I`m FIbot\nI can show you your schedule - use:\n"
-                                                          "/schedule (now | tom | DD-MM-YYYY) \nAlso i have "
+                                                          "/schedule \nAlso i have "
                                                           "some undocumented features :D\nMy developer is working on "
-                                                          "adding your homework to my database. He`s nice :3")
+                                                          "adding your homework to my database.")
 
 
 def button(bot, update):
@@ -95,7 +96,7 @@ def unmute_job(bot, job):
 
 
 def main():
-    ud = telegram.ext.Updater(token='')
+    ud = telegram.ext.Updater(token=token)
     dp = ud.dispatcher
     jq = ud.job_queue
     dp.add_handler(telegram.ext.CommandHandler('start', start))
