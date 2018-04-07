@@ -2,7 +2,7 @@ from schedule import (schedule_gen, button_gen, admins_gen, isAdmin, admAdd)
 import datetime
 import telegram.ext
 import logging
-from re import match
+from re import fullmatch
 from config import token  # single-string file with my bot`s token
 
 logging.basicConfig(level=logging.DEBUG,
@@ -52,7 +52,7 @@ def helper(bot, update):
 
 def button(bot, update):
     query = update.callback_query
-    if match(r'\d{2}-\d{2}-\d{4}', query.data):
+    if fullmatch(r'\d{2}-\d{2}-\d{4}', query.data):
         bot.edit_message_text(text=schedule_gen([query.data]),
                               chat_id=query.message.chat.id,
                               message_id=query.message.message_id,
@@ -60,12 +60,12 @@ def button(bot, update):
 
 
 def mute(bot, update, args, job_queue):
-    reply = update.message.reply_to_message.from_user
     muter_role = isAdmin(update.effective_message.from_user.id, update.message.chat.id)
-    if muter_role and isAdmin(reply.id, update.message.chat.id) != 'Admin':
-        if not update.message.reply_to_message:  # TODO: fix message (Returns NonType(?) not None)
+    if muter_role:
+        if not update.message.reply_to_message:  # TODO: add minutes, days e.t.c
             bot.send_message(chat_id=update.message.chat_id, text="Reply person you want to mute")
-        elif args and (match(r'\d{1,3}', args[0]) or (args[0] == 'forever' and muter_role == 'Admin')):
+        elif args and (fullmatch(r'\d{1,3}', args[0]) or (args[0] == 'forever' and muter_role == 'Admin')) and isAdmin(update.message.reply_to_message.from_user.id, update.message.chat.id) != 'Admin':
+            reply = update.message.reply_to_message.from_user
             bot.restrictChatMember(chat_id=update.message.chat.id,
                                    user_id=reply.id)
             if args[0] == 'forever' or int(args[0]) != 0:
@@ -83,7 +83,7 @@ def mute(bot, update, args, job_queue):
                                                 userid=reply.id,
                                                 username=reply.first_name + ' ' + reply.last_name))
         else:
-            bot.send_message(chat_id=update.message.chat_id, text="Specify time in minutes")
+            bot.send_message(chat_id=update.message.chat_id, text="Specify time up to 999 minutes")
     else:
         bot.send_message(chat_id=update.message.chat_id, text="Permission denied")
 
