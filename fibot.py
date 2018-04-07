@@ -9,12 +9,11 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-keyboard = button_gen()
 
 
 def start(bot, update):
     bot.send_message(chat_id=update.message.chat_id,
-                     text='Hi! I`m FIbot. I`ll send you your schedule, homework and other useful info')
+                     text='Hi! I`m FIbot.')
 
 
 def adm(bot, update, args):
@@ -32,31 +31,9 @@ def adm(bot, update, args):
                 bot.send_message(chat_id=update.message.chat_id, text="Invalid role or user alredy admin or moderator")
 
 
-def keyboard_job(bot, job):
-    globals()['keyboard'] = button_gen()
-    logger.debug('Updated keyboard')
-
-
-# TODO: add homework to some day
-def schedule(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text=schedule_gen(),
-                     reply_markup=telegram.InlineKeyboardMarkup(keyboard))
-
-
 # TODO: Normal help message for admin/moderator
 def helper(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text="Hi! I`m FIbot\nI can show you your schedule - use:\n"
-                                                          "/schedule \nAlso i have some undocumented features :D\nMy "
-                                                          "developer is working on adding your homework to my database")
-
-
-def button(bot, update):
-    query = update.callback_query
-    if fullmatch(r'\d{2}-\d{2}-\d{4}', query.data):
-        bot.edit_message_text(text=schedule_gen([query.data]),
-                              chat_id=query.message.chat.id,
-                              message_id=query.message.message_id,
-                              reply_markup=telegram.InlineKeyboardMarkup(button_gen()))
+    bot.send_message(chat_id=update.message.chat_id, text="Hi! I`m FIbot")
 
 
 def mute(bot, update, args, job_queue):
@@ -100,15 +77,10 @@ def unmute_job(bot, job):
 def main():
     ud = telegram.ext.Updater(token=token)
     dp = ud.dispatcher
-    jq = ud.job_queue
     dp.add_handler(telegram.ext.CommandHandler('start', start))
     dp.add_handler(telegram.ext.CommandHandler('adm', adm, pass_args=True))
-    dp.add_handler(telegram.ext.CommandHandler('schedule', schedule))
     dp.add_handler(telegram.ext.CommandHandler('help', helper))
     dp.add_handler(telegram.ext.CommandHandler('mute', mute, pass_args=True, pass_job_queue=True))
-    dp.add_handler(telegram.ext.CallbackQueryHandler(button))
-    jq.run_repeating(keyboard_job, datetime.timedelta(days=1),
-                     datetime.datetime.now().replace(hour=00, minute=0) + datetime.timedelta(days=7-datetime.datetime.now().weekday()))
     ud.start_polling()
     ud.idle()
 
