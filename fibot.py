@@ -44,6 +44,8 @@ def adm(bot, update, args):
                                      reply.first_name + ' ' + reply.last_name, args[1]))
             else:
                 bot.send_message(chat_id=update.message.chat_id, text="Invalid role or user alredy admin or moderator")
+        else:
+            bot.send_message(chat_id=update.message.chat_id, text="reply to user you want to promote")
 
 
 # TODO: Normal help message for admin/moderator
