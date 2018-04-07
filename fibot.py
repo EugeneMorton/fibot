@@ -108,8 +108,7 @@ def main():
     dp.add_handler(telegram.ext.CommandHandler('mute', mute, pass_args=True, pass_job_queue=True))
     dp.add_handler(telegram.ext.CallbackQueryHandler(button))
     jq.run_repeating(keyboard_job, datetime.timedelta(days=1),
-                     datetime.datetime.now().replace(hour=00, minute=0) + datetime.timedelta(days=1))
-    # TODO: set uppdate keyboard every week, not day
+                     datetime.datetime.now().replace(hour=00, minute=0) + datetime.timedelta(days=7-datetime.datetime.now().weekday()))
     ud.start_polling()
     ud.idle()
 
