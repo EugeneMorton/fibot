@@ -1,4 +1,4 @@
-"""Copyright 2018 Eugene Litvin
+"""Copyright 2018 Eugene Litvin & Alexey Lozovoy
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -33,12 +33,12 @@ def start(bot, update):
 
 def adm(bot, update, args):
     if not args:
-        bot.send_message(chat_id=update.message.chat_id, text=admins_gen(update.message.chat_id))
+        bot.send_message(chat_id=update.message.chat_id, parse_mode='Markdown', text=admins_gen(update.message.chat_id))
     elif args[0] == 'add' and isAdmin(update.effective_message.from_user.id, update.message.chat.id) == 'Admin':
         reply = update.message.reply_to_message.from_user
         if update.message.reply_to_message:
             if args[1] in ['Admin', 'Moderator'] and not isAdmin(chatid=update.message.chat_id, userid=reply.id):
-                admAdd([update.message.chat_id, reply.id, args[1], reply.first_name + ' ' + reply.last_name])
+                admAdd([update.message.chat_id, reply.id, args[1], reply.first_name + ' ' + reply.last_name, '@' + reply.username])
                 bot.send_message(chat_id=update.message.chat_id,
                                  text="User {0} was promoted to {1}".format(
                                      reply.first_name + ' ' + reply.last_name, args[1]))
