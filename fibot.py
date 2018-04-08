@@ -13,12 +13,14 @@
    limitations under the License."""
 
 
-from schedule import (admins_gen, isAdmin, admAdd)
 import datetime
-import telegram.ext
 import logging
-from re import fullmatch
+from re import search
+
+import telegram.ext
+
 from config import token  # single-string file with my bot`s token
+from schedule import (admins_gen, isAdmin, admAdd)
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -53,33 +55,52 @@ def helper(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Hi! I`m FIbot")
 
 
+# noinspection Annotator
 def mute(bot, update, args, job_queue):
     muter_role = isAdmin(update.effective_message.from_user.id, update.message.chat.id)
-    if muter_role:
-        if not update.message.reply_to_message:  # TODO: add minutes, days e.t.c
-            bot.send_message(chat_id=update.message.chat_id, text="Reply person you want to mute")
-        elif args and (fullmatch(r'\d{1,3}', args[0]) or (args[0] == 'forever' and muter_role == 'Admin')) and isAdmin(update.message.reply_to_message.from_user.id, update.message.chat.id) != 'Admin':
-            reply = update.message.reply_to_message.from_user
+    if not muter_role:
+        bot.send_message(chat_id=update.message.chat_id, text="Permission denied")
+    elif not update.message.reply_to_message:
+        bot.send_message(chat_id=update.message.chat_id, text="Reply person you want to mute")
+    elif args and isAdmin(update.message.reply_to_message.from_user.id, update.message.chat.id) != 'Admin':
+        # noinspection Annotator
+        date = search(r'(\d+[d|h|m])', ''.join(args))
+        reply = update.message.reply_to_message.from_user
+        if (args[0] == 'forever' and muter_role == 'Admin') or date:
             bot.restrictChatMember(chat_id=update.message.chat.id,
                                    user_id=reply.id)
-            if args[0] == 'forever' or int(args[0]) != 0:
-                bot.send_message(chat_id=update.message.chat_id,
-                                 text="User {0} was muted for {1} minutes".format(
-                                     reply.first_name + ' ' + reply.last_name, args[0]))
-            else:
-                for job in job_queue.get_jobs_by_name(reply.id+update.message.chat_id):
-                    job.schedule_removal()
-
+            bot.send_message(chat_id=update.message.chat_id,
+                             text="User {0} was muted for {1}".format(reply.first_name + ' ' + reply.last_name,
+                                                                      ' '.join(args)))
             if args[0] != 'forever':
-                job_queue.run_once(unmute_job, datetime.timedelta(minutes=int(args[0])),
+                for i in date.groups():
+                    day = i[:-1] if i[-1] == 'd' else 0
+                    hour = i[:-1] if i[-1] == 'h' else 0
+                    minutes = i[:-1] if i[-1] == 'm' else 0
+                job_queue.run_once(unmute_job, datetime.timedelta(days=int(day), hours=int(hour), minutes=int(minutes)),
                                    name=reply.id + update.message.chat_id,
                                    context=dict(chatid=update.message.chat_id,
                                                 userid=reply.id,
                                                 username=reply.first_name + ' ' + reply.last_name))
-        else:
-            bot.send_message(chat_id=update.message.chat_id, text="Specify time up to 999 minutes")
     else:
+        bot.send_message(chat_id=update.message.chat_id, text="Specify time up to 999 minutes")
+
+
+def unmute(bot, update, job_queue):
+    muter_role = isAdmin(update.effective_message.from_user.id, update.message.chat.id)
+    if not muter_role:
         bot.send_message(chat_id=update.message.chat_id, text="Permission denied")
+    elif not update.message.reply_to_message:
+        bot.send_message(chat_id=update.message.chat_id, text="Reply person you want to unmute")
+    else:
+        reply = update.message.reply_to_message.from_user
+        for job in job_queue.get_jobs_by_name(reply.id + update.message.chat_id):
+            job.schedule_removal()
+        job_queue.run_once(unmute_job, datetime.timedelta(),
+                           name=reply.id + update.message.chat_id,
+                           context=dict(chatid=update.message.chat_id,
+                                        userid=reply.id,
+                                        username=reply.first_name + ' ' + reply.last_name))
 
 
 def unmute_job(bot, job):
@@ -98,6 +119,7 @@ def main():
     dp.add_handler(telegram.ext.CommandHandler('adm', adm, pass_args=True))
     dp.add_handler(telegram.ext.CommandHandler('help', helper))
     dp.add_handler(telegram.ext.CommandHandler('mute', mute, pass_args=True, pass_job_queue=True))
+    dp.add_handler(telegram.ext.CommandHandler('unmute', unmute, pass_job_queue=True))
     ud.start_polling()
     ud.idle()
 
