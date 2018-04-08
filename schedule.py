@@ -20,10 +20,10 @@ def admins_gen(chatid):
     c = conn.cursor()
     mes = '`Admins:`\n'
     c.execute("CREATE TABLE IF NOT EXISTS admins (chatid INTEGER, userid INTEGER, role TEXT, name TEXT)")
-    for row in c.execute('SELECT * FROM admins WHERE chatid = ? AND role = "Admin"', [chatid]):
+    for row in c.execute('SELECT * FROM admins WHERE chatid = ? AND role = ?', (chatid, "Admin")):
         mes += '- `' + row[3] + '`\n  ' + row[4] + '\n'
     mes += '`Moderators:`\n'
-    for row in c.execute('SELECT * FROM admins WHERE chatid = ? AND role = "Moderator"', [chatid]):
+    for row in c.execute('SELECT * FROM admins WHERE chatid = ? AND role = ?', (chatid, "Moderator")):
         mes += '- `' + row[3] + '`\n  ' + row[4] + '\n'
     conn.close()
     return mes
