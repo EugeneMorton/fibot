@@ -14,7 +14,7 @@
 
 import datetime
 import logging
-from re import search
+from re import (search, match)
 
 import telegram.ext
 
@@ -55,35 +55,43 @@ def helper(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Hi! I`m FIbot")
 
 
-# noinspection Annotator,PyUnboundLocalVariable,PyUnboundLocalVariable,PyUnboundLocalVariable
 def mute(bot, update, args, job_queue):
     muter_role = is_admin(update.effective_message.from_user.id, update.message.chat.id)
-    if not muter_role:
+    if not (update.message.reply_to_message and args and ((args[0] == 'forever' and muter_role == 'Admin') or match(
+            r'\s?\d+[d|h|m]\s', ' '.join(args) + ' '))):
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Reply person you want to mute and set mute time as number + (d or h or m)")
+    elif not muter_role:
         bot.send_message(chat_id=update.message.chat_id, text="Permission denied")
-    elif not update.message.reply_to_message:
-        bot.send_message(chat_id=update.message.chat_id, text="Reply person you want to mute")
-    elif args and is_admin(update.message.reply_to_message.from_user.id, update.message.chat.id) != 'Admin':
-        date = search(r' (\d+[d|h|m]) ', ' ' + ' '.join(args) + ' ')
+    elif is_admin(update.message.reply_to_message.from_user.id, update.message.chat.id) != 'Admin':
         reply = update.message.reply_to_message.from_user
-        if (args[0] == 'forever' and muter_role == 'Admin') or date:
-            bot.restrictChatMember(chat_id=update.message.chat.id,
-                                   user_id=reply.id)
-            bot.send_message(chat_id=update.message.chat_id,
-                             text="User {0} was muted for {1}".format(reply.first_name + ' ' + reply.last_name,
-                                                                      ' '.join(args)))
-            if args[0] != 'forever':
-                for i in date.groups():
-                    if i[-1] == 'd':
-                        day = i[:-1]
-                    elif i[-1] == 'h':
-                        hour = i[:-1]
-                    elif i[-1] == 'm':
-                        minutes = i[:-1]
-                job_queue.run_once(unmute_job, datetime.timedelta(days=int(day), hours=int(hour), minutes=int(minutes)),
-                                   name=reply.id + update.message.chat_id,
-                                   context=dict(chatid=update.message.chat_id,
-                                                userid=reply.id,
-                                                username=reply.first_name + ' ' + reply.last_name))
+        job_queue.run_once(mute_job, datetime.timedelta(),
+                           context=dict(chatid=update.message.chat_id,
+                                        userid=reply.id,
+                                        username=reply.first_name + ' ' + reply.last_name,
+                                        args=args))
+
+
+def mute_job(bot, job):
+    date = search(r'\s?(\d+[d|h|m])\s', ' '.join(job.context['args']) + ' ')
+    bot.restrictChatMember(chat_id=job.context['chatid'],
+                           user_id=job.context['userid'])
+    bot.send_message(chat_id=job.context['chatid'],
+                     text="User {0} was muted for {1}".format(job.context['username'], ' '.join(job.context['args'])))
+    if job.context['args'][0] != 'forever':
+        day, hour, minutes = (0, 0, 0)
+        for i in date.groups():
+            if i[-1] == 'd':
+                day = i[:-1]
+            elif i[-1] == 'h':
+                hour = i[:-1]
+            elif i[-1] == 'm':
+                minutes = i[:-1]
+        job.job_queue.run_once(unmute_job, datetime.timedelta(days=int(day), hours=int(hour), minutes=int(minutes)),
+                               name=job.context['userid'] + job.context['chatid'],
+                               context=dict(chatid=job.context['chatid'],
+                                            userid=job.context['userid'],
+                                            username=job.context['username']))
 
 
 def unmute(bot, update, job_queue):
