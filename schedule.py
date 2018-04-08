@@ -29,7 +29,7 @@ def admins_gen(chatid):
     return mes
 
 
-def isAdmin(userid, chatid):
+def is_admin(userid, chatid):
     conn = sqlite3.connect('fibot.db')
     c = conn.cursor()
     for row in c.execute('SELECT * FROM admins WHERE chatid = ?', [chatid]):
@@ -39,7 +39,7 @@ def isAdmin(userid, chatid):
     return None
 
 
-def admAdd(args):
+def adm_add(args):
     conn = sqlite3.connect('fibot.db')
     c = conn.cursor()
     c.execute('INSERT INTO admins (chatid, userid, role, name, username) VALUES (?, ?, ?, ?, ?)', args)
